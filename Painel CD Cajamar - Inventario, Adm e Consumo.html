@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Gestão</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060d1c;font-family:'Segoe UI',system-ui,sans-serif;color:#cdd9f0;min-height:100vh}
+
+.hdr{background:#040a14;border-bottom:1px solid #0f2040;padding:10px 20px;display:flex;align-items:center;justify-content:space-between}
+.hdr-left{display:flex;align-items:center;gap:10px}
+.hdr-logo{width:28px;height:28px;background:#0d2a5c;border:1px solid #1a4a9a;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.hdr-logo-inner{width:12px;height:12px;background:#2563eb;border-radius:2px}
+.hdr-title{font-size:15px;font-weight:700;color:#d0e4ff;letter-spacing:-0.01em}
+.hdr-sub{font-size:11px;color:#4a6a90;margin-left:10px;border-left:1px solid #0f2040;padding-left:10px}
+.hdr-date{font-size:11px;color:#4a6a90;background:#040e1e;border:1px solid #0f2040;border-radius:6px;padding:4px 12px}
+
+.tabbar{background:#030810;border-bottom:2px solid #0f2040;padding:0 0 0 12px;display:flex;align-items:flex-end;overflow-x:auto}
+.tabbar::-webkit-scrollbar{height:3px}
+.tabbar::-webkit-scrollbar-track{background:#030810}
+.tabbar::-webkit-scrollbar-thumb{background:#1a3a6a}
+.xl-tab{display:flex;align-items:center;gap:6px;padding:8px 16px 7px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:4px 4px 0 0;white-space:nowrap;transition:all 0.15s;color:#3a6090;background:transparent;margin-right:2px;user-select:none}
+.xl-tab:hover:not(.xl-active){background:#060f20;color:#5a90c0;border-color:#0d1e38}
+.xl-tab.xl-active{background:#060d1c;color:#70b8ff;border-color:#1a3a6a;border-bottom-color:#060d1c;font-weight:600}
+.tab-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:#1a3a6a;transition:background 0.15s}
+.xl-tab.xl-active .tab-dot{background:#2563eb}
+
+.content{padding:16px}
+.sec{display:none}
+.sec.on{display:block}
+
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+
+.card{background:#060f20;border:1px solid #0d2040;border-radius:10px;padding:14px;position:relative;overflow:hidden}
+.card-acc{border-left:3px solid #1a4a9a}
+
+.clabel{font-size:10px;font-weight:600;color:#5a8fbf;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px}
+.cnum{font-size:26px;font-weight:700;color:#b8d0ff;letter-spacing:-0.02em}
+.csub{font-size:11px;color:#3a6090;margin-top:3px}
+.cbar{height:5px;background:#030c1a;border-radius:3px;margin-top:10px;overflow:hidden}
+.cbar-fill{height:100%;border-radius:3px}
+
+.b{display:inline-flex;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.b-ok{background:rgba(22,163,74,0.13);color:#4ade80}
+.b-warn{background:rgba(234,179,8,0.13);color:#facc15}
+.b-crit{background:rgba(239,68,68,0.13);color:#f87171}
+.b-blue{background:rgba(37,99,235,0.16);color:#70b8ff}
+.b-teal{background:rgba(20,184,166,0.13);color:#2dd4bf}
+.b-purple{background:rgba(139,92,246,0.16);color:#c4b5fd}
+
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{color:#4a7aaa;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;padding:7px 9px;border-bottom:1px solid #0d1e38;text-align:left}
+.tbl td{padding:9px 9px;border-bottom:1px solid rgba(13,32,64,0.6);color:#7a9ac8;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(13,32,64,0.5)}
+.tbl td[contenteditable="true"]:focus{outline:1px solid #2563eb;background:rgba(37,99,235,0.06);border-radius:3px}
+
+.srow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #080f20}
+.srow:last-child{border-bottom:none}
+.sdot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:7px}
+
+.alert{padding:9px 12px;border-radius:8px;background:#050c1a;margin-bottom:7px;border-left:3px solid}
+.alert:last-child{margin-bottom:0}
+.alert-t{font-size:12px;font-weight:600;color:#9ab8dc;margin-bottom:2px}
+.alert-s{font-size:11px;color:#6a90b8}
+
+.prow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #080f20}
+.prow:last-child{border-bottom:none}
+.avt{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;border:1px solid rgba(37,99,235,0.2)}
+
+.prog-wrap{margin-bottom:11px}
+.prog-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;color:#7a9ac8}
+.prog-bar{height:9px;background:#030c1a;border-radius:5px;overflow:hidden;border:1px solid #0d1e38}
+.prog-fill{height:100%;border-radius:5px}
+
+/* CAMPO VAZIO — placeholder editável */
+.empty-cell{color:#1e3a60;font-style:italic}
+.hint{font-size:10px;color:#1a3a60;font-style:italic;margin-top:10px;padding-top:8px;border-top:1px solid #080f20}
+
+.rec-card{cursor:pointer;min-height:210px;display:flex;flex-direction:column;justify-content:space-between;transition:border-color 0.2s}
+.rec-card:hover{border-color:#2563eb}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo"><div class="hdr-logo-inner"></div></div>
+    <span class="hdr-title">Painel de Gestão</span>
+    <span class="hdr-sub">Controle operacional</span>
+  </div>
+  <span class="hdr-date" id="cur-date"></span>
+</div>
+
+<!-- ABAS ESTILO EXCEL -->
+<div class="tabbar">
+  <div class="xl-tab xl-active" onclick="goTab('geral',this)"><span class="tab-dot"></span>Visão Geral</div>
+  <div class="xl-tab" onclick="goTab('rec',this)"><span class="tab-dot"></span>REC</div>
+  <div class="xl-tab" onclick="goTab('material',this)"><span class="tab-dot"></span>Mat. Consumo</div>
+  <div class="xl-tab" onclick="goTab('uniforme',this)"><span class="tab-dot"></span>Uniforme</div>
+  <div class="xl-tab" onclick="goTab('epi',this)"><span class="tab-dot"></span>EPI</div>
+  <div class="xl-tab" onclick="goTab('inventario',this)"><span class="tab-dot"></span>Inventário</div>
+  <div class="xl-tab" onclick="goTab('contagem',this)"><span class="tab-dot"></span>Contagem</div>
+  <div class="xl-tab" onclick="goTab('expedicao',this)"><span class="tab-dot"></span>Expedição Adm.</div>
+  <div class="xl-tab" onclick="goTab('gestao',this)"><span class="tab-dot"></span>Gestão Geral</div>
+</div>
+
+<div class="content">
+
+  <!-- ===== VISÃO GERAL ===== -->
+  <div id="sec-geral" class="sec on">
+    <div class="g4">
+      <div class="card card-acc">
+        <div class="clabel">Total Itens</div>
+        <div class="cnum" contenteditable="true" id="total-itens">—</div>
+        <div class="csub">em estoque geral</div>
+        <div class="cbar"><div class="cbar-fill" id="bar-itens" style="width:0%;background:#1d4ed8"></div></div>
+      </div>
+      <div class="card card-acc">
+        <div class="clabel">Requisições</div>
+        <div class="cnum" contenteditable="true">—</div>
+        <div class="csub">abertas hoje</div>
+        <div class="cbar"><div class="cbar-fill" style="width:0%;background:#ca8a04"></div></div>
+      </div>
+      <div class="card card-acc">
+        <div class="clabel">Alertas</div>
+        <div class="cnum" contenteditable="true">—</div>
+        <div class="csub">nível crítico</div>
+        <div class="cbar"><div class="cbar-fill" style="width:0%;background:#dc2626"></div></div>
+      </div>
+      <div class="card card-acc">
+        <div class="clabel">Setores OK</div>
+        <div class="cnum" contenteditable="true">—/7</div>
+        <div class="csub">operacionais</div>
+        <div class="cbar"><div class="cbar-fill" style="width:0%;background:#16a34a"></div></div>
+      </div>
+    </div>
+
+    <div class="g2">
+      <!-- CAMPANHA DE RECONHECIMENTO -->
+      <div class="card rec-card">
+        <svg width="140" height="150" viewBox="0 0 130 140" style="position:absolute;right:-12px;bottom:-8px;opacity:0.055;pointer-events:none" fill="none">
+          <rect x="45" y="108" width="40" height="10" rx="3" fill="#c0a030"/>
+          <rect x="35" y="118" width="60" height="10" rx="3" fill="#c0a030"/>
+          <path d="M25 18 Q10 20 10 40 Q10 62 35 70 L35 90 Q30 92 30 98 L100 98 Q100 92 95 90 L95 70 Q120 62 120 40 Q120 20 105 18 Z" fill="#c0a030"/>
+          <path d="M35 70 Q65 82 95 70" stroke="#e8c040" stroke-width="2" fill="none"/>
+          <ellipse cx="65" cy="20" rx="38" ry="16" fill="#c0a030"/>
+          <path d="M27 18 Q10 22 10 42 Q10 58 27 66" stroke="#e8c040" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M103 18 Q120 22 120 42 Q120 58 103 66" stroke="#e8c040" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <text x="65" y="62" text-anchor="middle" font-size="26" font-weight="700" fill="#e8c040" font-family="'Segoe UI',sans-serif">1</text>
+        </svg>
+        <div>
+          <div class="clabel">Campanha de Reconhecimento</div>
+          <div style="display:flex;align-items:flex-end;justify-content:center;gap:14px;margin:12px 0 14px">
+            <!-- Prata -->
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+              <svg width="44" height="52" viewBox="0 0 44 52">
+                <line x1="17" y1="0" x2="14" y2="16" stroke="#8aaabe" stroke-width="3" stroke-linecap="round"/>
+                <line x1="27" y1="0" x2="30" y2="16" stroke="#8aaabe" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="22" cy="36" r="16" fill="#3a5a6e"/><circle cx="22" cy="36" r="13" fill="#5a7a90"/><circle cx="22" cy="36" r="10" fill="#7aaac8"/>
+                <text x="22" y="41" text-anchor="middle" font-size="13" font-weight="700" fill="#c8dce8" font-family="'Segoe UI',sans-serif">2</text>
+              </svg>
+              <div style="width:54px;height:28px;background:#08152a;border:1px solid #0d2040;border-radius:4px 4px 0 0"></div>
+            </div>
+            <!-- Ouro -->
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+              <svg width="56" height="66" viewBox="0 0 56 66">
+                <line x1="28" y1="20" x2="28" y2="11" stroke="#b89010" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="40" y1="24" x2="47" y2="17" stroke="#b89010" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="45" y1="36" x2="53" y2="36" stroke="#b89010" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="40" y1="48" x2="47" y2="55" stroke="#b89010" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="16" y1="24" x2="9" y2="17" stroke="#b89010" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="11" y1="36" x2="3" y2="36" stroke="#b89010" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="16" y1="48" x2="9" y2="55" stroke="#b89010" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="21" y1="2" x2="19" y2="20" stroke="#a07000" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="35" y1="2" x2="37" y2="20" stroke="#a07000" stroke-width="3.5" stroke-linecap="round"/>
+                <circle cx="28" cy="42" r="18" fill="#7a5000"/><circle cx="28" cy="42" r="15" fill="#a87808"/><circle cx="28" cy="42" r="12" fill="#c8a010"/><circle cx="28" cy="42" r="9" fill="#e8c028"/>
+                <text x="28" y="47" text-anchor="middle" font-size="14" font-weight="700" fill="#5a3800" font-family="'Segoe UI',sans-serif">1</text>
+              </svg>
+              <div style="width:54px;height:42px;background:#0d1e40;border:1px solid #1a3060;border-radius:4px 4px 0 0"></div>
+            </div>
+            <!-- Bronze -->
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+              <svg width="44" height="52" viewBox="0 0 44 52">
+                <line x1="17" y1="0" x2="14" y2="16" stroke="#906040" stroke-width="3" stroke-linecap="round"/>
+                <line x1="27" y1="0" x2="30" y2="16" stroke="#906040" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="22" cy="36" r="16" fill="#4a2c10"/><circle cx="22" cy="36" r="13" fill="#6a3e1a"/><circle cx="22" cy="36" r="10" fill="#905030"/>
+                <text x="22" y="41" text-anchor="middle" font-size="13" font-weight="700" fill="#e0b880" font-family="'Segoe UI',sans-serif">3</text>
+              </svg>
+              <div style="width:54px;height:18px;background:#08111e;border:1px solid #0d2040;border-radius:4px 4px 0 0"></div>
+            </div>
+          </div>
+          <div style="height:2px;background:#0d2040;border-radius:2px;margin:0 10px"></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
+          <span style="font-size:11px;color:#6a90b8">Ver campanha completa</span>
+          <span style="font-size:12px;color:#60a8ff;font-weight:600">acessar →</span>
+        </div>
+      </div>
+
+      <!-- ALERTAS -->
+      <div class="card">
+        <div class="clabel">Alertas Recentes</div>
+        <div class="alert" style="border-color:#0d2040">
+          <div class="alert-t empty-cell">Setor — Item</div>
+          <div class="alert-s empty-cell">Descrição do alerta</div>
+        </div>
+        <div class="alert" style="border-color:#0d2040">
+          <div class="alert-t empty-cell">Setor — Item</div>
+          <div class="alert-s empty-cell">Descrição do alerta</div>
+        </div>
+        <div class="alert" style="border-color:#0d2040">
+          <div class="alert-t empty-cell">Setor — Item</div>
+          <div class="alert-s empty-cell">Descrição do alerta</div>
+        </div>
+        <div class="alert" style="border-color:#0d2040">
+          <div class="alert-t empty-cell">Setor — Item</div>
+          <div class="alert-s empty-cell">Descrição do alerta</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== REC ===== -->
+  <div id="sec-rec" class="sec">
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Requisições Abertas</div><div class="cnum">—</div><div class="csub">aguardando atendimento</div></div>
+      <div class="card card-acc"><div class="clabel">Atendidas Hoje</div><div class="cnum">—</div><div class="csub">finalizadas</div></div>
+      <div class="card card-acc"><div class="clabel">Prazo Médio</div><div class="cnum">—</div><div class="csub">tempo de atendimento</div></div>
+      <div class="card card-acc"><div class="clabel">Sem Estoque</div><div class="cnum">—</div><div class="csub">itens bloqueados</div></div>
+    </div>
+    <div class="card">
+      <div class="clabel" style="margin-bottom:12px">Requisições em Aberto</div>
+      <table class="tbl">
+        <thead><tr><th>Nº</th><th>Solicitante</th><th>Item</th><th>Qtd</th><th>Status</th><th>Data</th></tr></thead>
+        <tbody>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+        </tbody>
+      </table>
+      <div class="hint">Preencha com os dados do seu Excel</div>
+    </div>
+  </div>
+
+  <!-- ===== MATERIAL DE CONSUMO ===== -->
+  <div id="sec-material" class="sec">
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Itens Cadastrados</div><div class="cnum">—</div><div class="csub">total</div></div>
+      <div class="card card-acc"><div class="clabel">Acima do Mínimo</div><div class="cnum">—</div><div class="csub">nível seguro</div></div>
+      <div class="card card-acc"><div class="clabel">Em Atenção</div><div class="cnum">—</div><div class="csub">abaixo do mínimo</div></div>
+      <div class="card card-acc"><div class="clabel">Crítico / Zerado</div><div class="cnum">—</div><div class="csub">sem estoque</div></div>
+    </div>
+    <div class="card">
+      <div class="clabel" style="margin-bottom:12px">Itens que Precisam de Atenção</div>
+      <table class="tbl">
+        <thead><tr><th>Item</th><th>Estoque Atual</th><th>Mínimo</th><th>Status</th><th>Ação</th></tr></thead>
+        <tbody>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+        </tbody>
+      </table>
+      <div class="hint">Preencha com os dados do seu Excel</div>
+    </div>
+  </div>
+
+  <!-- ===== UNIFORME ===== -->
+  <div id="sec-uniforme" class="sec">
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Peças em Estoque</div><div class="cnum">—</div><div class="csub">total geral</div></div>
+      <div class="card card-acc"><div class="clabel">Tamanhos OK</div><div class="cnum">—</div><div class="csub">nível seguro</div></div>
+      <div class="card card-acc"><div class="clabel">Em Atenção</div><div class="cnum">—</div><div class="csub">abaixo do mínimo</div></div>
+      <div class="card card-acc"><div class="clabel">Entregas no Mês</div><div class="cnum">—</div><div class="csub">realizadas</div></div>
+    </div>
+    <div class="card">
+      <div class="clabel" style="margin-bottom:12px">Estoque por Tamanho</div>
+      <table class="tbl">
+        <thead><tr><th>Tamanho</th><th>Peça</th><th>Qtd</th><th>Mínimo</th><th>Status</th><th>Nível</th></tr></thead>
+        <tbody>
+          <tr><td class="empty-cell">PP</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td><div class="cbar" style="width:100px;display:inline-block"><div class="cbar-fill" style="width:0%;background:#1d4ed8"></div></div></td></tr>
+          <tr><td class="empty-cell">P</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td><div class="cbar" style="width:100px;display:inline-block"><div class="cbar-fill" style="width:0%;background:#1d4ed8"></div></div></td></tr>
+          <tr><td class="empty-cell">M</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td><div class="cbar" style="width:100px;display:inline-block"><div class="cbar-fill" style="width:0%;background:#1d4ed8"></div></div></td></tr>
+          <tr><td class="empty-cell">G</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td><div class="cbar" style="width:100px;display:inline-block"><div class="cbar-fill" style="width:0%;background:#1d4ed8"></div></div></td></tr>
+          <tr><td class="empty-cell">GG</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td><div class="cbar" style="width:100px;display:inline-block"><div class="cbar-fill" style="width:0%;background:#1d4ed8"></div></div></td></tr>
+          <tr><td class="empty-cell">XG</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td><div class="cbar" style="width:100px;display:inline-block"><div class="cbar-fill" style="width:0%;background:#1d4ed8"></div></div></td></tr>
+        </tbody>
+      </table>
+      <div class="hint">Preencha com os dados do seu Excel</div>
+    </div>
+  </div>
+
+  <!-- ===== EPI ===== -->
+  <div id="sec-epi" class="sec">
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Tipos de EPI</div><div class="cnum">—</div><div class="csub">cadastrados</div></div>
+      <div class="card card-acc"><div class="clabel">Nível Crítico</div><div class="cnum">—</div><div class="csub">abaixo do mínimo</div></div>
+      <div class="card card-acc"><div class="clabel">Vencendo em 30d</div><div class="cnum">—</div><div class="csub">certificados</div></div>
+      <div class="card card-acc"><div class="clabel">Entregas no Mês</div><div class="cnum">—</div><div class="csub">realizadas</div></div>
+    </div>
+    <div class="card">
+      <div class="clabel" style="margin-bottom:12px">Controle de EPI</div>
+      <table class="tbl">
+        <thead><tr><th>EPI</th><th>CA</th><th>Estoque</th><th>Vencimento CA</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+        </tbody>
+      </table>
+      <div class="hint">Preencha com os dados do seu Excel</div>
+    </div>
+  </div>
+
+  <!-- ===== INVENTÁRIO ===== -->
+  <div id="sec-inventario" class="sec">
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Itens Cadastrados</div><div class="cnum">—</div><div class="csub">total</div></div>
+      <div class="card card-acc"><div class="clabel">Acuracidade</div><div class="cnum">—</div><div class="csub">geral</div></div>
+      <div class="card card-acc"><div class="clabel">Último Inventário</div><div class="cnum" style="font-size:18px;padding-top:6px">—</div><div class="csub">data</div></div>
+      <div class="card card-acc"><div class="clabel">Valor Total</div><div class="cnum" style="font-size:18px;padding-top:6px">—</div><div class="csub">em estoque</div></div>
+    </div>
+    <div class="card">
+      <div class="clabel" style="margin-bottom:12px">Inventário por Categoria</div>
+      <table class="tbl">
+        <thead><tr><th>Categoria</th><th>Qtd Itens</th><th>Valor Total</th><th>Acuracidade</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+        </tbody>
+      </table>
+      <div class="hint">Preencha com os dados do seu Excel</div>
+    </div>
+  </div>
+
+  <!-- ===== CONTAGEM ===== -->
+  <div id="sec-contagem" class="sec">
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Total de Setores</div><div class="cnum">—</div><div class="csub">para contar</div></div>
+      <div class="card card-acc"><div class="clabel">Concluídos</div><div class="cnum">—</div><div class="csub">finalizados</div></div>
+      <div class="card card-acc"><div class="clabel">Em Andamento</div><div class="cnum">—</div><div class="csub">em progresso</div></div>
+      <div class="card card-acc"><div class="clabel">Pendente</div><div class="cnum">—</div><div class="csub">não iniciado</div></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="clabel" style="margin-bottom:14px">Progresso Geral</div>
+        <div class="prog-wrap"><div class="prog-label"><span class="empty-cell">Setor —</span><span class="empty-cell">—</span></div><div class="prog-bar"><div class="prog-fill" style="width:0%;background:#1d4ed8"></div></div></div>
+        <div class="prog-wrap"><div class="prog-label"><span class="empty-cell">Setor —</span><span class="empty-cell">—</span></div><div class="prog-bar"><div class="prog-fill" style="width:0%;background:#1d4ed8"></div></div></div>
+        <div class="prog-wrap"><div class="prog-label"><span class="empty-cell">Setor —</span><span class="empty-cell">—</span></div><div class="prog-bar"><div class="prog-fill" style="width:0%;background:#1d4ed8"></div></div></div>
+        <div class="prog-wrap"><div class="prog-label"><span class="empty-cell">Setor —</span><span class="empty-cell">—</span></div><div class="prog-bar"><div class="prog-fill" style="width:0%;background:#1d4ed8"></div></div></div>
+        <div class="prog-wrap"><div class="prog-label"><span class="empty-cell">Setor —</span><span class="empty-cell">—</span></div><div class="prog-bar"><div class="prog-fill" style="width:0%;background:#1d4ed8"></div></div></div>
+        <div class="prog-wrap"><div class="prog-label"><span class="empty-cell">Setor —</span><span class="empty-cell">—</span></div><div class="prog-bar"><div class="prog-fill" style="width:0%;background:#1d4ed8"></div></div></div>
+        <div class="prog-wrap"><div class="prog-label"><span class="empty-cell">Setor —</span><span class="empty-cell">—</span></div><div class="prog-bar"><div class="prog-fill" style="width:0%;background:#1d4ed8"></div></div></div>
+        <div class="hint">Preencha com os dados do seu Excel</div>
+      </div>
+      <div class="card">
+        <div class="clabel" style="margin-bottom:12px">Detalhe por Setor</div>
+        <table class="tbl">
+          <thead><tr><th>Setor</th><th>Responsável</th><th>Início</th><th>Término</th><th>Diverg.</th></tr></thead>
+          <tbody>
+            <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+            <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+            <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+            <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+            <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+            <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+            <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          </tbody>
+        </table>
+        <div class="hint">Preencha com os dados do seu Excel</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== EXPEDIÇÃO ADM ===== -->
+  <div id="sec-expedicao" class="sec">
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Documentos no Mês</div><div class="cnum">—</div><div class="csub">movimentados</div></div>
+      <div class="card card-acc"><div class="clabel">Em Trânsito Hoje</div><div class="cnum">—</div><div class="csub">em andamento</div></div>
+      <div class="card card-acc"><div class="clabel">No Prazo</div><div class="cnum">—</div><div class="csub">pontualidade</div></div>
+      <div class="card card-acc"><div class="clabel">Aguardando</div><div class="cnum">—</div><div class="csub">pendentes de envio</div></div>
+    </div>
+    <div class="card">
+      <div class="clabel" style="margin-bottom:12px">Movimentações Recentes</div>
+      <table class="tbl">
+        <thead><tr><th>Doc.</th><th>Tipo</th><th>Destino</th><th>Responsável</th><th>Data</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+        </tbody>
+      </table>
+      <div class="hint">Preencha com os dados do seu Excel</div>
+    </div>
+  </div>
+
+  <!-- ===== GESTÃO GERAL ===== -->
+  <div id="sec-gestao" class="sec">
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Banco de Horas</div><div class="cnum">—</div><div class="csub">saldo da equipe</div></div>
+      <div class="card card-acc"><div class="clabel">Férias Agendadas</div><div class="cnum">—</div><div class="csub">próximos 30 dias</div></div>
+      <div class="card card-acc"><div class="clabel">Folgas Agendadas</div><div class="cnum">—</div><div class="csub">este mês</div></div>
+      <div class="card card-acc"><div class="clabel">Colaboradores</div><div class="cnum">—</div><div class="csub">total ativo</div></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="clabel" style="margin-bottom:12px">Banco de Horas — Equipe</div>
+        <div class="prow"><div style="display:flex;align-items:center;gap:9px"><div class="avt" style="background:#0a1830;color:#4a7aaa">—</div><div><div style="font-size:12px;color:#4a6a90">Nome do colaborador</div><div style="font-size:11px;color:#1e3a60">Setor</div></div></div><span style="font-size:12px;color:#1e3a60">—h</span></div>
+        <div class="prow"><div style="display:flex;align-items:center;gap:9px"><div class="avt" style="background:#0a1830;color:#4a7aaa">—</div><div><div style="font-size:12px;color:#4a6a90">Nome do colaborador</div><div style="font-size:11px;color:#1e3a60">Setor</div></div></div><span style="font-size:12px;color:#1e3a60">—h</span></div>
+        <div class="prow"><div style="display:flex;align-items:center;gap:9px"><div class="avt" style="background:#0a1830;color:#4a7aaa">—</div><div><div style="font-size:12px;color:#4a6a90">Nome do colaborador</div><div style="font-size:11px;color:#1e3a60">Setor</div></div></div><span style="font-size:12px;color:#1e3a60">—h</span></div>
+        <div class="prow"><div style="display:flex;align-items:center;gap:9px"><div class="avt" style="background:#0a1830;color:#4a7aaa">—</div><div><div style="font-size:12px;color:#4a6a90">Nome do colaborador</div><div style="font-size:11px;color:#1e3a60">Setor</div></div></div><span style="font-size:12px;color:#1e3a60">—h</span></div>
+        <div class="prow"><div style="display:flex;align-items:center;gap:9px"><div class="avt" style="background:#0a1830;color:#4a7aaa">—</div><div><div style="font-size:12px;color:#4a6a90">Nome do colaborador</div><div style="font-size:11px;color:#1e3a60">Setor</div></div></div><span style="font-size:12px;color:#1e3a60">—h</span></div>
+        <div class="prow"><div style="display:flex;align-items:center;gap:9px"><div class="avt" style="background:#0a1830;color:#4a7aaa">—</div><div><div style="font-size:12px;color:#4a6a90">Nome do colaborador</div><div style="font-size:11px;color:#1e3a60">Setor</div></div></div><span style="font-size:12px;color:#1e3a60">—h</span></div>
+        <div class="hint">Preencha com os colaboradores e saldos do seu Excel</div>
+      </div>
+      <div class="card">
+        <div class="clabel" style="margin-bottom:12px">Férias e Folgas Agendadas</div>
+        <table class="tbl">
+          <thead><tr><th>Colaborador</th><th>Tipo</th><th>Início</th><th>Retorno</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+            <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+            <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+            <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+            <tr><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td><td class="empty-cell">—</td></tr>
+          </tbody>
+        </table>
+        <div class="hint">Preencha com os dados de férias e folgas do seu Excel</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function goTab(name, el){
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.xl-tab').forEach(t => t.classList.remove('xl-active'));
+  const sec = document.getElementById('sec-' + name);
+  if(sec) sec.classList.add('on');
+  if(el) el.classList.add('xl-active');
+}
+const d = new Date();
+document.getElementById('cur-date').textContent = d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+</script>
+</body>
+</html>
