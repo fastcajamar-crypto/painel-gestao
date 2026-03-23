@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Gestão</title>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060d1c;font-family:'Segoe UI',system-ui,sans-serif;color:#cdd9f0;min-height:100vh}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060d1c}
+.login-box{background:#060f20;border:1px solid #0d2040;border-radius:14px;padding:36px 32px;width:100%;max-width:380px}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px;justify-content:center}
+.login-logo-dot{width:32px;height:32px;background:#0d2a5c;border:1px solid #1a4a9a;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.login-logo-inner{width:14px;height:14px;background:#2563eb;border-radius:3px}
+.login-title{font-size:17px;font-weight:700;color:#d0e4ff}
+.login-sub{font-size:12px;color:#3a6090;text-align:center;margin-bottom:24px}
+.login-label{font-size:11px;color:#5a8fbf;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;display:block}
+.login-input{width:100%;background:#040e1e;border:1px solid #0d2040;border-radius:8px;color:#cdd9f0;padding:10px 14px;font-size:13px;outline:none;margin-bottom:14px;transition:border-color 0.15s}
+.login-input:focus{border-color:#2563eb}
+.login-btn{width:100%;background:#1d4ed8;border:none;border-radius:8px;color:#fff;padding:11px;font-size:13px;font-weight:600;cursor:pointer;transition:background 0.15s;margin-top:4px}
+.login-btn:hover{background:#2563eb}
+.login-error{font-size:12px;color:#f87171;margin-bottom:12px;display:none}
+
+/* HEADER */
+.hdr{background:#040a14;border-bottom:1px solid #0f2040;padding:10px 20px;display:flex;align-items:center;justify-content:space-between}
+.hdr-left{display:flex;align-items:center;gap:10px}
+.hdr-logo{width:28px;height:28px;background:#0d2a5c;border:1px solid #1a4a9a;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.hdr-logo-inner{width:12px;height:12px;background:#2563eb;border-radius:2px}
+.hdr-title{font-size:15px;font-weight:700;color:#d0e4ff;letter-spacing:-0.01em}
+.hdr-sub{font-size:11px;color:#4a6a90;margin-left:10px;border-left:1px solid #0f2040;padding-left:10px}
+.hdr-right{display:flex;align-items:center;gap:12px}
+.hdr-date{font-size:11px;color:#4a6a90;background:#040e1e;border:1px solid #0f2040;border-radius:6px;padding:4px 12px}
+.hdr-user{font-size:11px;color:#5a8fbf;background:#040e1e;border:1px solid #0f2040;border-radius:6px;padding:4px 12px;cursor:pointer}
+.logout-btn{font-size:11px;color:#f87171;background:transparent;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:4px 12px;cursor:pointer;transition:all 0.15s}
+.logout-btn:hover{background:rgba(239,68,68,0.1)}
+
+/* TABS */
+.tabbar{background:#030810;border-bottom:2px solid #0f2040;padding:0 0 0 12px;display:flex;align-items:flex-end;overflow-x:auto}
+.tabbar::-webkit-scrollbar{height:3px}
+.tabbar::-webkit-scrollbar-thumb{background:#1a3a6a}
+.xl-tab{display:flex;align-items:center;gap:6px;padding:8px 16px 7px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:4px 4px 0 0;white-space:nowrap;transition:all 0.15s;color:#3a6090;background:transparent;margin-right:2px;user-select:none}
+.xl-tab:hover:not(.xl-active){background:#060f20;color:#5a90c0;border-color:#0d1e38}
+.xl-tab.xl-active{background:#060d1c;color:#70b8ff;border-color:#1a3a6a;border-bottom-color:#060d1c;font-weight:600}
+.tab-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:#1a3a6a}
+.xl-tab.xl-active .tab-dot{background:#2563eb}
+
+/* CONTENT */
+.content{padding:16px}
+.sec{display:none}.sec.on{display:block}
+
+/* GRIDS */
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+
+/* CARDS */
+.card{background:#060f20;border:1px solid #0d2040;border-radius:10px;padding:14px;position:relative;overflow:hidden}
+.card-acc{border-left:3px solid #1a4a9a}
+.clabel{font-size:10px;font-weight:600;color:#5a8fbf;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px}
+.cnum{font-size:26px;font-weight:700;color:#b8d0ff;letter-spacing:-0.02em}
+.csub{font-size:11px;color:#3a6090;margin-top:3px}
+.cbar{height:5px;background:#030c1a;border-radius:3px;margin-top:10px;overflow:hidden}
+.cbar-fill{height:100%;border-radius:3px;transition:width 0.5s}
+
+/* BADGES */
+.b{display:inline-flex;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.b-ok{background:rgba(22,163,74,0.13);color:#4ade80}
+.b-warn{background:rgba(234,179,8,0.13);color:#facc15}
+.b-crit{background:rgba(239,68,68,0.13);color:#f87171}
+.b-blue{background:rgba(37,99,235,0.16);color:#70b8ff}
+.b-teal{background:rgba(20,184,166,0.13);color:#2dd4bf}
+.b-purple{background:rgba(139,92,246,0.16);color:#c4b5fd}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{color:#4a7aaa;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;padding:7px 9px;border-bottom:1px solid #0d1e38;text-align:left}
+.tbl td{padding:9px 9px;border-bottom:1px solid rgba(13,32,64,0.6);color:#7a9ac8;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(13,32,64,0.5)}
+
+/* ALERT */
+.alert{padding:9px 12px;border-radius:8px;background:#050c1a;margin-bottom:7px;border-left:3px solid}
+.alert:last-child{margin-bottom:0}
+.alert-t{font-size:12px;font-weight:600;color:#9ab8dc;margin-bottom:2px}
+.alert-s{font-size:11px;color:#6a90b8}
+
+/* PERSON */
+.prow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #080f20}
+.prow:last-child{border-bottom:none}
+.avt{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;border:1px solid rgba(37,99,235,0.2);background:#0a1830;color:#70b8ff}
+
+/* PROGRESS */
+.prog-wrap{margin-bottom:11px}
+.prog-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;color:#7a9ac8}
+.prog-bar{height:9px;background:#030c1a;border-radius:5px;overflow:hidden;border:1px solid #0d1e38}
+.prog-fill{height:100%;border-radius:5px;transition:width 0.5s}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.toolbar-title{font-size:13px;font-weight:600;color:#9ab8dc}
+.toolbar-actions{display:flex;gap:8px;align-items:center}
+.btn{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s}
+.btn-primary{background:#1d4ed8;color:#fff}
+.btn-primary:hover{background:#2563eb}
+.btn-ghost{background:#0a1830;color:#5a8fbf;border:1px solid #0d2040}
+.btn-ghost:hover{color:#9ab8dc;border-color:#1a3a6a}
+.btn-danger{background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.2)}
+.btn-sm{padding:4px 10px;font-size:11px}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:#060f20;border:1px solid #0d2040;border-radius:14px;padding:24px;width:100%;max-width:480px}
+.modal-title{font-size:14px;font-weight:600;color:#9ab8dc;margin-bottom:18px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:11px;color:#5a8fbf;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;display:block}
+.form-input{width:100%;background:#040e1e;border:1px solid #0d2040;border-radius:7px;color:#cdd9f0;padding:8px 12px;font-size:13px;outline:none;transition:border-color 0.15s}
+.form-input:focus{border-color:#2563eb}
+.form-select{width:100%;background:#040e1e;border:1px solid #0d2040;border-radius:7px;color:#cdd9f0;padding:8px 12px;font-size:13px;outline:none}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+
+/* IMPORT */
+.import-area{border:2px dashed #0d2040;border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color 0.2s;margin-bottom:14px}
+.import-area:hover{border-color:#2563eb}
+.import-icon{font-size:28px;margin-bottom:8px}
+.import-text{font-size:13px;color:#5a8fbf}
+.import-sub{font-size:11px;color:#1e3a60;margin-top:4px}
+
+/* LOADING */
+.loading{display:none;text-align:center;padding:40px;color:#3a6090;font-size:13px}
+.loading.on{display:block}
+
+/* REC CARD */
+.rec-card{cursor:pointer;min-height:210px;display:flex;flex-direction:column;justify-content:space-between;transition:border-color 0.2s}
+.rec-card:hover{border-color:#2563eb}
+
+/* NOTIFICATION */
+.notif{position:fixed;top:20px;right:20px;background:#060f20;border:1px solid #0d2040;border-radius:10px;padding:12px 18px;font-size:13px;color:#9ab8dc;z-index:200;display:none;border-left:3px solid #2563eb}
+.notif.on{display:block}
+.notif.success{border-left-color:#16a34a;color:#4ade80}
+.notif.error{border-left-color:#dc2626;color:#f87171}
+</style>
+</head>
+<body>
+
+<!-- NOTIFICAÇÃO -->
+<div class="notif" id="notif"></div>
+
+<!-- ===== LOGIN ===== -->
+<div class="login-wrap" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-dot"><div class="login-logo-inner"></div></div>
+      <span class="login-title">Painel de Gestão</span>
+    </div>
+    <div class="login-sub">Acesse com seu e-mail e senha</div>
+    <div class="login-error" id="login-error">E-mail ou senha incorretos</div>
+    <label class="login-label">E-mail</label>
+    <input class="login-input" type="email" id="login-email" placeholder="seu@email.com">
+    <label class="login-label">Senha</label>
+    <input class="login-input" type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- ===== SISTEMA ===== -->
+<div id="sistema" style="display:none">
+
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo"><div class="hdr-logo-inner"></div></div>
+    <span class="hdr-title">Painel de Gestão</span>
+    <span class="hdr-sub">Controle operacional</span>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-date" id="cur-date"></span>
+    <span class="hdr-user" id="hdr-user">—</span>
+    <button class="logout-btn" onclick="doLogout()">Sair</button>
+  </div>
+</div>
+
+<div class="tabbar">
+  <div class="xl-tab xl-active" onclick="goTab('geral',this)"><span class="tab-dot"></span>Visão Geral</div>
+  <div class="xl-tab" onclick="goTab('rec',this)"><span class="tab-dot"></span>REC</div>
+  <div class="xl-tab" onclick="goTab('material',this)"><span class="tab-dot"></span>Mat. Consumo</div>
+  <div class="xl-tab" onclick="goTab('uniforme',this)"><span class="tab-dot"></span>Uniforme</div>
+  <div class="xl-tab" onclick="goTab('epi',this)"><span class="tab-dot"></span>EPI</div>
+  <div class="xl-tab" onclick="goTab('inventario',this)"><span class="tab-dot"></span>Inventário</div>
+  <div class="xl-tab" onclick="goTab('contagem',this)"><span class="tab-dot"></span>Contagem</div>
+  <div class="xl-tab" onclick="goTab('expedicao',this)"><span class="tab-dot"></span>Expedição Adm.</div>
+  <div class="xl-tab" onclick="goTab('gestao',this)"><span class="tab-dot"></span>Gestão Geral</div>
+  <div class="xl-tab" onclick="goTab('usuarios',this)"><span class="tab-dot"></span>Usuários</div>
+</div>
+
+<div class="content">
+
+  <!-- VISÃO GERAL -->
+  <div id="sec-geral" class="sec on">
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Total Itens</div><div class="cnum" id="g-total">—</div><div class="csub">em estoque geral</div><div class="cbar"><div class="cbar-fill" id="g-total-bar" style="width:0%;background:#1d4ed8"></div></div></div>
+      <div class="card card-acc"><div class="clabel">Requisições</div><div class="cnum" id="g-req">—</div><div class="csub">abertas hoje</div><div class="cbar"><div class="cbar-fill" id="g-req-bar" style="width:0%;background:#ca8a04"></div></div></div>
+      <div class="card card-acc"><div class="clabel">Alertas</div><div class="cnum" id="g-alertas">—</div><div class="csub">nível crítico</div><div class="cbar"><div class="cbar-fill" id="g-alertas-bar" style="width:0%;background:#dc2626"></div></div></div>
+      <div class="card card-acc"><div class="clabel">Colaboradores</div><div class="cnum" id="g-colab">—</div><div class="csub">ativos</div><div class="cbar"><div class="cbar-fill" id="g-colab-bar" style="width:0%;background:#16a34a"></div></div></div>
+    </div>
+    <div class="g2">
+      <!-- CAMPANHA -->
+      <div class="card rec-card" onclick="goTab('campanha', null)">
+        <svg width="140" height="150" viewBox="0 0 130 140" style="position:absolute;right:-12px;bottom:-8px;opacity:0.055;pointer-events:none" fill="none">
+          <rect x="45" y="108" width="40" height="10" rx="3" fill="#c0a030"/>
+          <rect x="35" y="118" width="60" height="10" rx="3" fill="#c0a030"/>
+          <path d="M25 18 Q10 20 10 40 Q10 62 35 70 L35 90 Q30 92 30 98 L100 98 Q100 92 95 90 L95 70 Q120 62 120 40 Q120 20 105 18 Z" fill="#c0a030"/>
+          <ellipse cx="65" cy="20" rx="38" ry="16" fill="#c0a030"/>
+          <text x="65" y="62" text-anchor="middle" font-size="26" font-weight="700" fill="#e8c040" font-family="'Segoe UI',sans-serif">1</text>
+        </svg>
+        <div>
+          <div class="clabel">Campanha de Reconhecimento</div>
+          <div style="display:flex;align-items:flex-end;justify-content:center;gap:14px;margin:12px 0 14px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+              <svg width="44" height="52" viewBox="0 0 44 52"><line x1="17" y1="0" x2="14" y2="16" stroke="#8aaabe" stroke-width="3" stroke-linecap="round"/><line x1="27" y1="0" x2="30" y2="16" stroke="#8aaabe" stroke-width="3" stroke-linecap="round"/><circle cx="22" cy="36" r="16" fill="#3a5a6e"/><circle cx="22" cy="36" r="13" fill="#5a7a90"/><circle cx="22" cy="36" r="10" fill="#7aaac8"/><text x="22" y="41" text-anchor="middle" font-size="13" font-weight="700" fill="#c8dce8" font-family="'Segoe UI',sans-serif">2</text></svg>
+              <div style="width:54px;height:28px;background:#08152a;border:1px solid #0d2040;border-radius:4px 4px 0 0"></div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+              <svg width="56" height="66" viewBox="0 0 56 66"><line x1="28" y1="20" x2="28" y2="11" stroke="#b89010" stroke-width="1.5" stroke-linecap="round"/><line x1="40" y1="24" x2="47" y2="17" stroke="#b89010" stroke-width="1.5" stroke-linecap="round"/><line x1="45" y1="36" x2="53" y2="36" stroke="#b89010" stroke-width="1.5" stroke-linecap="round"/><line x1="16" y1="24" x2="9" y2="17" stroke="#b89010" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="36" x2="3" y2="36" stroke="#b89010" stroke-width="1.5" stroke-linecap="round"/><line x1="21" y1="2" x2="19" y2="20" stroke="#a07000" stroke-width="3.5" stroke-linecap="round"/><line x1="35" y1="2" x2="37" y2="20" stroke="#a07000" stroke-width="3.5" stroke-linecap="round"/><circle cx="28" cy="42" r="18" fill="#7a5000"/><circle cx="28" cy="42" r="15" fill="#a87808"/><circle cx="28" cy="42" r="12" fill="#c8a010"/><circle cx="28" cy="42" r="9" fill="#e8c028"/><text x="28" y="47" text-anchor="middle" font-size="14" font-weight="700" fill="#5a3800" font-family="'Segoe UI',sans-serif">1</text></svg>
+              <div style="width:54px;height:42px;background:#0d1e40;border:1px solid #1a3060;border-radius:4px 4px 0 0"></div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+              <svg width="44" height="52" viewBox="0 0 44 52"><line x1="17" y1="0" x2="14" y2="16" stroke="#906040" stroke-width="3" stroke-linecap="round"/><line x1="27" y1="0" x2="30" y2="16" stroke="#906040" stroke-width="3" stroke-linecap="round"/><circle cx="22" cy="36" r="16" fill="#4a2c10"/><circle cx="22" cy="36" r="13" fill="#6a3e1a"/><circle cx="22" cy="36" r="10" fill="#905030"/><text x="22" y="41" text-anchor="middle" font-size="13" font-weight="700" fill="#e0b880" font-family="'Segoe UI',sans-serif">3</text></svg>
+              <div style="width:54px;height:18px;background:#08111e;border:1px solid #0d2040;border-radius:4px 4px 0 0"></div>
+            </div>
+          </div>
+          <div style="height:2px;background:#0d2040;border-radius:2px;margin:0 10px"></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
+          <span style="font-size:11px;color:#6a90b8">Ver campanha completa</span>
+          <span style="font-size:12px;color:#60a8ff;font-weight:600">acessar →</span>
+        </div>
+      </div>
+      <!-- ALERTAS -->
+      <div class="card">
+        <div class="clabel">Alertas Recentes</div>
+        <div id="alertas-lista"><div style="color:#1e3a60;font-size:12px;padding:10px 0">Carregando alertas...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REC -->
+  <div id="sec-rec" class="sec">
+    <div class="toolbar">
+      <span class="toolbar-title">Requisições</span>
+      <div class="toolbar-actions">
+        <button class="btn btn-ghost" onclick="importExcel('rec')">Importar Excel</button>
+        <button class="btn btn-primary" onclick="openModal('modal-req')">+ Nova Requisição</button>
+      </div>
+    </div>
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Abertas</div><div class="cnum" id="rec-abertas">—</div><div class="csub">aguardando</div></div>
+      <div class="card card-acc"><div class="clabel">Atendidas Hoje</div><div class="cnum" id="rec-atendidas">—</div><div class="csub">finalizadas</div></div>
+      <div class="card card-acc"><div class="clabel">Em Separação</div><div class="cnum" id="rec-separacao">—</div><div class="csub">em andamento</div></div>
+      <div class="card card-acc"><div class="clabel">Sem Estoque</div><div class="cnum" id="rec-semestoque">—</div><div class="csub">bloqueadas</div></div>
+    </div>
+    <div class="card">
+      <table class="tbl">
+        <thead><tr><th>Nº</th><th>Solicitante</th><th>Item</th><th>Qtd</th><th>Status</th><th>Data</th><th></th></tr></thead>
+        <tbody id="rec-tbody"><tr><td colspan="7" style="text-align:center;color:#1e3a60;padding:20px">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MATERIAL -->
+  <div id="sec-material" class="sec">
+    <div class="toolbar">
+      <span class="toolbar-title">Material de Consumo</span>
+      <div class="toolbar-actions">
+        <button class="btn btn-ghost" onclick="importExcel('material')">Importar Excel</button>
+        <button class="btn btn-primary" onclick="openModal('modal-material')">+ Novo Item</button>
+      </div>
+    </div>
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Total Itens</div><div class="cnum" id="mat-total">—</div><div class="csub">cadastrados</div></div>
+      <div class="card card-acc"><div class="clabel">OK</div><div class="cnum" id="mat-ok">—</div><div class="csub">acima do mínimo</div></div>
+      <div class="card card-acc"><div class="clabel">Atenção</div><div class="cnum" id="mat-atencao">—</div><div class="csub">abaixo do mínimo</div></div>
+      <div class="card card-acc"><div class="clabel">Crítico</div><div class="cnum" id="mat-crit">—</div><div class="csub">zerado ou crítico</div></div>
+    </div>
+    <div class="card">
+      <table class="tbl">
+        <thead><tr><th>Item</th><th>Estoque</th><th>Mínimo</th><th>Unidade</th><th>Status</th><th></th></tr></thead>
+        <tbody id="mat-tbody"><tr><td colspan="6" style="text-align:center;color:#1e3a60;padding:20px">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- UNIFORME -->
+  <div id="sec-uniforme" class="sec">
+    <div class="toolbar">
+      <span class="toolbar-title">Uniforme</span>
+      <div class="toolbar-actions">
+        <button class="btn btn-ghost" onclick="importExcel('uniforme')">Importar Excel</button>
+        <button class="btn btn-primary" onclick="openModal('modal-uniforme')">+ Novo Item</button>
+      </div>
+    </div>
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Total Peças</div><div class="cnum" id="uni-total">—</div><div class="csub">em estoque</div></div>
+      <div class="card card-acc"><div class="clabel">OK</div><div class="cnum" id="uni-ok">—</div><div class="csub">tamanhos seguros</div></div>
+      <div class="card card-acc"><div class="clabel">Atenção</div><div class="cnum" id="uni-atencao">—</div><div class="csub">abaixo do mínimo</div></div>
+      <div class="card card-acc"><div class="clabel">Crítico</div><div class="cnum" id="uni-crit">—</div><div class="csub">nível crítico</div></div>
+    </div>
+    <div class="card">
+      <table class="tbl">
+        <thead><tr><th>Peça</th><th>Tamanho</th><th>Qtd</th><th>Mínimo</th><th>Status</th><th>Nível</th><th></th></tr></thead>
+        <tbody id="uni-tbody"><tr><td colspan="7" style="text-align:center;color:#1e3a60;padding:20px">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- EPI -->
+  <div id="sec-epi" class="sec">
+    <div class="toolbar">
+      <span class="toolbar-title">EPI</span>
+      <div class="toolbar-actions">
+        <button class="btn btn-ghost" onclick="importExcel('epi')">Importar Excel</button>
+        <button class="btn btn-primary" onclick="openModal('modal-epi')">+ Novo EPI</button>
+      </div>
+    </div>
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Total Tipos</div><div class="cnum" id="epi-total">—</div><div class="csub">cadastrados</div></div>
+      <div class="card card-acc"><div class="clabel">Crítico</div><div class="cnum" id="epi-crit">—</div><div class="csub">sem estoque</div></div>
+      <div class="card card-acc"><div class="clabel">Vencendo</div><div class="cnum" id="epi-venc">—</div><div class="csub">próx. 30 dias</div></div>
+      <div class="card card-acc"><div class="clabel">OK</div><div class="cnum" id="epi-ok">—</div><div class="csub">regulares</div></div>
+    </div>
+    <div class="card">
+      <table class="tbl">
+        <thead><tr><th>EPI</th><th>CA</th><th>Estoque</th><th>Unidade</th><th>Vencimento CA</th><th>Status</th><th></th></tr></thead>
+        <tbody id="epi-tbody"><tr><td colspan="7" style="text-align:center;color:#1e3a60;padding:20px">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- INVENTÁRIO -->
+  <div id="sec-inventario" class="sec">
+    <div class="toolbar">
+      <span class="toolbar-title">Inventário</span>
+      <div class="toolbar-actions">
+        <button class="btn btn-ghost" onclick="importExcel('inventario')">Importar Excel</button>
+        <button class="btn btn-primary" onclick="openModal('modal-inventario')">+ Nova Categoria</button>
+      </div>
+    </div>
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Total Itens</div><div class="cnum" id="inv-total">—</div><div class="csub">cadastrados</div></div>
+      <div class="card card-acc"><div class="clabel">Acuracidade</div><div class="cnum" id="inv-acur">—</div><div class="csub">média geral</div></div>
+      <div class="card card-acc"><div class="clabel">Valor Total</div><div class="cnum" id="inv-valor" style="font-size:18px;padding-top:4px">—</div><div class="csub">em estoque</div></div>
+      <div class="card card-acc"><div class="clabel">Categorias</div><div class="cnum" id="inv-cat">—</div><div class="csub">cadastradas</div></div>
+    </div>
+    <div class="card">
+      <table class="tbl">
+        <thead><tr><th>Categoria</th><th>Qtd Itens</th><th>Valor Total</th><th>Acuracidade</th><th>Status</th><th></th></tr></thead>
+        <tbody id="inv-tbody"><tr><td colspan="6" style="text-align:center;color:#1e3a60;padding:20px">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CONTAGEM -->
+  <div id="sec-contagem" class="sec">
+    <div class="toolbar">
+      <span class="toolbar-title">Contagem de Estoque</span>
+      <div class="toolbar-actions">
+        <button class="btn btn-primary" onclick="openModal('modal-contagem')">+ Nova Contagem</button>
+      </div>
+    </div>
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Total Setores</div><div class="cnum" id="cont-total">—</div><div class="csub">para contar</div></div>
+      <div class="card card-acc"><div class="clabel">Concluídos</div><div class="cnum" id="cont-ok">—</div><div class="csub">finalizados</div></div>
+      <div class="card card-acc"><div class="clabel">Em Andamento</div><div class="cnum" id="cont-and">—</div><div class="csub">em progresso</div></div>
+      <div class="card card-acc"><div class="clabel">Pendente</div><div class="cnum" id="cont-pend">—</div><div class="csub">não iniciado</div></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="clabel" style="margin-bottom:14px">Progresso por Setor</div>
+        <div id="cont-progress"></div>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>Setor</th><th>Responsável</th><th>Início</th><th>Término</th><th>Diverg.</th><th>Status</th></tr></thead>
+          <tbody id="cont-tbody"><tr><td colspan="6" style="text-align:center;color:#1e3a60;padding:20px">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPEDIÇÃO -->
+  <div id="sec-expedicao" class="sec">
+    <div class="toolbar">
+      <span class="toolbar-title">Expedição Adm.</span>
+      <div class="toolbar-actions">
+        <button class="btn btn-primary" onclick="openModal('modal-exp')">+ Nova Movimentação</button>
+      </div>
+    </div>
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">No Mês</div><div class="cnum" id="exp-total">—</div><div class="csub">documentos</div></div>
+      <div class="card card-acc"><div class="clabel">Em Trânsito</div><div class="cnum" id="exp-transito">—</div><div class="csub">hoje</div></div>
+      <div class="card card-acc"><div class="clabel">Entregues</div><div class="cnum" id="exp-ok">—</div><div class="csub">concluídos</div></div>
+      <div class="card card-acc"><div class="clabel">Aguardando</div><div class="cnum" id="exp-aguard">—</div><div class="csub">pendentes</div></div>
+    </div>
+    <div class="card">
+      <table class="tbl">
+        <thead><tr><th>Doc.</th><th>Tipo</th><th>Destino</th><th>Responsável</th><th>Data</th><th>Status</th><th></th></tr></thead>
+        <tbody id="exp-tbody"><tr><td colspan="7" style="text-align:center;color:#1e3a60;padding:20px">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GESTÃO GERAL -->
+  <div id="sec-gestao" class="sec">
+    <div class="toolbar">
+      <span class="toolbar-title">Gestão Geral</span>
+      <div class="toolbar-actions">
+        <button class="btn btn-ghost" onclick="importExcel('gestao')">Importar Excel</button>
+        <button class="btn btn-primary" onclick="openModal('modal-colab')">+ Colaborador</button>
+        <button class="btn btn-ghost" onclick="openModal('modal-ferias')">+ Férias / Folga</button>
+      </div>
+    </div>
+    <div class="g4">
+      <div class="card card-acc"><div class="clabel">Banco de Horas</div><div class="cnum" id="gest-horas" style="color:#70b8ff">—</div><div class="csub">saldo da equipe</div></div>
+      <div class="card card-acc"><div class="clabel">Férias Agendadas</div><div class="cnum" id="gest-ferias" style="color:#2dd4bf">—</div><div class="csub">próximos 30 dias</div></div>
+      <div class="card card-acc"><div class="clabel">Folgas Agendadas</div><div class="cnum" id="gest-folgas" style="color:#c4b5fd">—</div><div class="csub">este mês</div></div>
+      <div class="card card-acc"><div class="clabel">Colaboradores</div><div class="cnum" id="gest-total">—</div><div class="csub">ativos</div></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="clabel" style="margin-bottom:12px">Banco de Horas</div>
+        <div id="colab-lista"></div>
+      </div>
+      <div class="card">
+        <div class="clabel" style="margin-bottom:12px">Férias e Folgas</div>
+        <table class="tbl">
+          <thead><tr><th>Colaborador</th><th>Tipo</th><th>Início</th><th>Retorno</th><th>Status</th><th></th></tr></thead>
+          <tbody id="ferias-tbody"><tr><td colspan="6" style="text-align:center;color:#1e3a60;padding:20px">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- USUÁRIOS -->
+  <div id="sec-usuarios" class="sec">
+    <div class="toolbar">
+      <span class="toolbar-title">Gerenciar Usuários</span>
+      <div class="toolbar-actions">
+        <button class="btn btn-primary" onclick="openModal('modal-usuario')">+ Novo Usuário</button>
+      </div>
+    </div>
+    <div class="card">
+      <table class="tbl">
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Setor</th><th>Status</th><th></th></tr></thead>
+        <tbody id="usr-tbody"><tr><td colspan="6" style="text-align:center;color:#1e3a60;padding:20px">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /content -->
+</div><!-- /sistema -->
+
+<!-- ===== MODAIS ===== -->
+
+<!-- Modal Colaborador -->
+<div class="modal-bg" id="modal-colab">
+  <div class="modal">
+    <div class="modal-title">Novo Colaborador</div>
+    <div class="form-group"><label class="form-label">Nome</label><input class="form-input" id="colab-nome" placeholder="Nome completo"></div>
+    <div class="form-group"><label class="form-label">Iniciais</label><input class="form-input" id="colab-iniciais" placeholder="Ex: JS" maxlength="3"></div>
+    <div class="form-group"><label class="form-label">Setor</label>
+      <select class="form-select" id="colab-setor">
+        <option value="">Selecione o setor</option>
+        <option>REC</option><option>Material de Consumo</option><option>Uniforme</option>
+        <option>EPI</option><option>Inventário</option><option>Contagem</option><option>Expedição Adm.</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Banco de Horas</label><input class="form-input" id="colab-horas" type="number" placeholder="Ex: 8 ou -4"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-colab')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarColaborador()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Férias/Folga -->
+<div class="modal-bg" id="modal-ferias">
+  <div class="modal">
+    <div class="modal-title">Agendar Férias / Folga</div>
+    <div class="form-group"><label class="form-label">Colaborador</label><input class="form-input" id="ff-nome" placeholder="Nome do colaborador"></div>
+    <div class="form-group"><label class="form-label">Tipo</label>
+      <select class="form-select" id="ff-tipo"><option value="ferias">Férias</option><option value="folga">Folga</option></select>
+    </div>
+    <div class="form-group"><label class="form-label">Data Início</label><input class="form-input" id="ff-inicio" type="date"></div>
+    <div class="form-group"><label class="form-label">Data Retorno</label><input class="form-input" id="ff-retorno" type="date"></div>
+    <div class="form-group"><label class="form-label">Status</label>
+      <select class="form-select" id="ff-status"><option value="pendente">Pendente</option><option value="aprovado">Aprovado</option><option value="recusado">Recusado</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-ferias')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarFerias()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Usuário -->
+<div class="modal-bg" id="modal-usuario">
+  <div class="modal">
+    <div class="modal-title">Novo Usuário</div>
+    <div class="form-group"><label class="form-label">Nome</label><input class="form-input" id="usr-nome" placeholder="Nome completo"></div>
+    <div class="form-group"><label class="form-label">E-mail</label><input class="form-input" id="usr-email" type="email" placeholder="email@empresa.com"></div>
+    <div class="form-group"><label class="form-label">Senha inicial</label><input class="form-input" id="usr-senha" type="password" placeholder="Mínimo 6 caracteres"></div>
+    <div class="form-group"><label class="form-label">Perfil de Acesso</label>
+      <select class="form-select" id="usr-perfil">
+        <option value="visualizador">Visualizador — só consulta</option>
+        <option value="gestor">Gestor — edita seu setor</option>
+        <option value="admin">Administrador — acesso total</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Setor (opcional)</label>
+      <select class="form-select" id="usr-setor">
+        <option value="">Todos os setores</option>
+        <option>REC</option><option>Material de Consumo</option><option>Uniforme</option>
+        <option>EPI</option><option>Inventário</option><option>Contagem</option><option>Expedição Adm.</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-usuario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="criarUsuario()">Criar Usuário</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Requisição -->
+<div class="modal-bg" id="modal-req">
+  <div class="modal">
+    <div class="modal-title">Nova Requisição</div>
+    <div class="form-group"><label class="form-label">Solicitante</label><input class="form-input" id="req-sol" placeholder="Nome do solicitante"></div>
+    <div class="form-group"><label class="form-label">Item</label><input class="form-input" id="req-item" placeholder="Descrição do item"></div>
+    <div class="form-group"><label class="form-label">Quantidade</label><input class="form-input" id="req-qtd" placeholder="Ex: 5 resmas"></div>
+    <div class="form-group"><label class="form-label">Status</label>
+      <select class="form-select" id="req-status">
+        <option value="aguardando">Aguardando</option>
+        <option value="em_separacao">Em separação</option>
+        <option value="atendida">Atendida</option>
+        <option value="sem_estoque">Sem estoque</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-req')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarRequisicao()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Input de arquivo oculto para import Excel -->
+<input type="file" id="excel-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="processExcel(event)">
+
+<script>
+const SUPA_URL = 'https://ktezajkehpyibhfuream.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0ZXphamtlaHB5aWJoZnVyZWFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTU5MjMsImV4cCI6MjA4OTg3MTkyM30.gEBNPYMuKdjuUW_1ZNCiPJWBcnDmJ_DMensgMjZG9yw';
+const { createClient } = supabase;
+const db = createClient(SUPA_URL, SUPA_KEY);
+
+let currentUser = null;
+let importTarget = null;
+
+// ========== AUTH ==========
+async function doLogin(){
+  const email = document.getElementById('login-email').value;
+  const pass  = document.getElementById('login-pass').value;
+  document.getElementById('login-error').style.display = 'none';
+  const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
+  if(error){ document.getElementById('login-error').style.display='block'; return; }
+  currentUser = data.user;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('sistema').style.display = 'block';
+  document.getElementById('hdr-user').textContent = email.split('@')[0];
+  loadAll();
+}
+
+async function doLogout(){
+  await db.auth.signOut();
+  location.reload();
+}
+
+// ========== NAV ==========
+function goTab(name, el){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.xl-tab').forEach(t=>t.classList.remove('xl-active'));
+  const sec = document.getElementById('sec-'+name);
+  if(sec) sec.classList.add('on');
+  if(el) el.classList.add('xl-active');
+}
+
+// ========== LOAD ALL ==========
+async function loadAll(){
+  loadGeral();
+  loadRequisicoes();
+  loadMaterial();
+  loadUniforme();
+  loadEPI();
+  loadInventario();
+  loadContagem();
+  loadExpedicao();
+  loadGestao();
+  loadUsuarios();
+}
+
+// ========== GERAL ==========
+async function loadGeral(){
+  const [colab, req, alertas] = await Promise.all([
+    db.from('colaboradores').select('*'),
+    db.from('requisicoes').select('*'),
+    db.from('alertas').select('*').eq('resolvido', false)
+  ]);
+  document.getElementById('g-colab').textContent = colab.data?.length || 0;
+  document.getElementById('g-req').textContent = req.data?.filter(r=>r.status==='aguardando').length || 0;
+  document.getElementById('g-alertas').textContent = alertas.data?.filter(a=>a.nivel==='critico').length || 0;
+
+  const lista = document.getElementById('alertas-lista');
+  if(!alertas.data?.length){ lista.innerHTML = '<div style="color:#1e3a60;font-size:12px;padding:10px 0">Nenhum alerta no momento</div>'; return; }
+  lista.innerHTML = alertas.data.slice(0,4).map(a=>`
+    <div class="alert" style="border-color:${a.nivel==='critico'?'#dc2626':a.nivel==='atencao'?'#ca8a04':'#16a34a'}">
+      <div class="alert-t">${a.titulo}</div>
+      <div class="alert-s">${a.descricao||''}</div>
+    </div>`).join('');
+}
+
+// ========== REQUISIÇÕES ==========
+async function loadRequisicoes(){
+  const {data} = await db.from('requisicoes').select('*').order('created_at',{ascending:false});
+  if(!data) return;
+  document.getElementById('rec-abertas').textContent = data.filter(r=>r.status==='aguardando').length;
+  document.getElementById('rec-atendidas').textContent = data.filter(r=>r.status==='atendida').length;
+  document.getElementById('rec-separacao').textContent = data.filter(r=>r.status==='em_separacao').length;
+  document.getElementById('rec-semestoque').textContent = data.filter(r=>r.status==='sem_estoque').length;
+  const statusMap = {aguardando:'b-warn',em_separacao:'b-blue',atendida:'b-ok',sem_estoque:'b-crit'};
+  const statusLabel = {aguardando:'Aguardando',em_separacao:'Em separação',atendida:'Atendida',sem_estoque:'Sem estoque'};
+  document.getElementById('rec-tbody').innerHTML = data.map(r=>`
+    <tr><td style="color:#9ab8dc">${r.numero||'—'}</td><td>${r.solicitante||'—'}</td><td>${r.item||'—'}</td><td>${r.quantidade||'—'}</td>
+    <td><span class="b ${statusMap[r.status]||'b-blue'}">${statusLabel[r.status]||r.status}</span></td>
+    <td>${r.data?new Date(r.data).toLocaleDateString('pt-BR'):'—'}</td>
+    <td><button class="btn btn-danger btn-sm" onclick="deletar('requisicoes','${r.id}',loadRequisicoes)">✕</button></td></tr>`).join('');
+}
+
+// ========== MATERIAL ==========
+async function loadMaterial(){
+  const {data} = await db.from('material_consumo').select('*').order('item');
+  if(!data) return;
+  document.getElementById('mat-total').textContent = data.length;
+  document.getElementById('mat-ok').textContent = data.filter(d=>d.status==='ok').length;
+  document.getElementById('mat-atencao').textContent = data.filter(d=>d.status==='atencao').length;
+  document.getElementById('mat-crit').textContent = data.filter(d=>['critico','zerado'].includes(d.status)).length;
+  const sm = {ok:'b-ok',atencao:'b-warn',critico:'b-crit',zerado:'b-crit'};
+  document.getElementById('mat-tbody').innerHTML = data.map(d=>`
+    <tr><td style="color:#9ab8dc">${d.item}</td><td>${d.estoque_atual} ${d.unidade||''}</td><td>${d.estoque_minimo}</td><td>${d.unidade||'—'}</td>
+    <td><span class="b ${sm[d.status]||'b-blue'}">${d.status||'—'}</span></td>
+    <td><button class="btn btn-danger btn-sm" onclick="deletar('material_consumo','${d.id}',loadMaterial)">✕</button></td></tr>`).join('');
+}
+
+// ========== UNIFORME ==========
+async function loadUniforme(){
+  const {data} = await db.from('uniforme').select('*').order('peca');
+  if(!data) return;
+  document.getElementById('uni-total').textContent = data.reduce((s,d)=>s+(d.quantidade||0),0);
+  document.getElementById('uni-ok').textContent = data.filter(d=>d.status==='ok').length;
+  document.getElementById('uni-atencao').textContent = data.filter(d=>d.status==='atencao').length;
+  document.getElementById('uni-crit').textContent = data.filter(d=>d.status==='critico').length;
+  const sm = {ok:'b-ok',atencao:'b-warn',critico:'b-crit'};
+  document.getElementById('uni-tbody').innerHTML = data.map(d=>{
+    const pct = d.minimo>0?Math.min(100,Math.round((d.quantidade/d.minimo)*100)):0;
+    const cor = d.status==='ok'?'#16a34a':d.status==='atencao'?'#ca8a04':'#dc2626';
+    return `<tr><td style="color:#9ab8dc">${d.peca}</td><td>${d.tamanho}</td><td>${d.quantidade}</td><td>${d.minimo}</td>
+    <td><span class="b ${sm[d.status]||'b-blue'}">${d.status||'—'}</span></td>
+    <td><div class="cbar" style="width:80px;display:inline-block"><div class="cbar-fill" style="width:${pct}%;background:${cor}"></div></div></td>
+    <td><button class="btn btn-danger btn-sm" onclick="deletar('uniforme','${d.id}',loadUniforme)">✕</button></td></tr>`;
+  }).join('');
+}
+
+// ========== EPI ==========
+async function loadEPI(){
+  const {data} = await db.from('epi').select('*').order('nome');
+  if(!data) return;
+  document.getElementById('epi-total').textContent = data.length;
+  document.getElementById('epi-crit').textContent = data.filter(d=>d.status==='critico').length;
+  document.getElementById('epi-venc').textContent = data.filter(d=>d.status==='vencendo').length;
+  document.getElementById('epi-ok').textContent = data.filter(d=>d.status==='ok').length;
+  const sm = {ok:'b-ok',atencao:'b-warn',critico:'b-crit',vencendo:'b-warn'};
+  document.getElementById('epi-tbody').innerHTML = data.map(d=>`
+    <tr><td style="color:#9ab8dc">${d.nome}</td><td>${d.ca||'—'}</td><td>${d.estoque} ${d.unidade||''}</td><td>${d.unidade||'—'}</td>
+    <td>${d.vencimento_ca?new Date(d.vencimento_ca).toLocaleDateString('pt-BR'):'—'}</td>
+    <td><span class="b ${sm[d.status]||'b-blue'}">${d.status||'—'}</span></td>
+    <td><button class="btn btn-danger btn-sm" onclick="deletar('epi','${d.id}',loadEPI)">✕</button></td></tr>`).join('');
+}
+
+// ========== INVENTÁRIO ==========
+async function loadInventario(){
+  const {data} = await db.from('inventario').select('*').order('categoria');
+  if(!data) return;
+  document.getElementById('inv-cat').textContent = data.length;
+  document.getElementById('inv-total').textContent = data.reduce((s,d)=>s+(d.qtd_itens||0),0).toLocaleString('pt-BR');
+  const valor = data.reduce((s,d)=>s+(d.valor_total||0),0);
+  document.getElementById('inv-valor').textContent = 'R$ '+valor.toLocaleString('pt-BR');
+  const acur = data.length?Math.round(data.reduce((s,d)=>s+(d.acuracidade||0),0)/data.length):0;
+  document.getElementById('inv-acur').textContent = acur+'%';
+  document.getElementById('inv-tbody').innerHTML = data.map(d=>`
+    <tr><td style="color:#9ab8dc">${d.categoria}</td><td>${(d.qtd_itens||0).toLocaleString('pt-BR')}</td>
+    <td>R$ ${(d.valor_total||0).toLocaleString('pt-BR')}</td><td>${d.acuracidade||0}%</td>
+    <td><span class="b ${d.status==='ok'?'b-ok':'b-warn'}">${d.status||'—'}</span></td>
+    <td><button class="btn btn-danger btn-sm" onclick="deletar('inventario','${d.id}',loadInventario)">✕</button></td></tr>`).join('');
+}
+
+// ========== CONTAGEM ==========
+async function loadContagem(){
+  const {data} = await db.from('contagem').select('*').order('setor');
+  if(!data) return;
+  document.getElementById('cont-total').textContent = data.length;
+  document.getElementById('cont-ok').textContent = data.filter(d=>d.status==='concluido').length;
+  document.getElementById('cont-and').textContent = data.filter(d=>d.status==='em_andamento').length;
+  document.getElementById('cont-pend').textContent = data.filter(d=>d.status==='pendente').length;
+  const sm = {pendente:'b-crit',em_andamento:'b-warn',concluido:'b-ok'};
+  const cor = {pendente:'#dc2626',em_andamento:'#ca8a04',concluido:'#16a34a'};
+  document.getElementById('cont-progress').innerHTML = data.map(d=>`
+    <div class="prog-wrap">
+      <div class="prog-label"><span>${d.setor}</span><span class="b ${sm[d.status]||'b-blue'}">${d.status||'—'}</span></div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${d.progresso||0}%;background:${cor[d.status]||'#1d4ed8'}"></div></div>
+    </div>`).join('');
+  document.getElementById('cont-tbody').innerHTML = data.map(d=>`
+    <tr><td style="color:#9ab8dc">${d.setor}</td><td>${d.responsavel||'—'}</td>
+    <td>${d.data_inicio?new Date(d.data_inicio).toLocaleDateString('pt-BR'):'—'}</td>
+    <td>${d.data_termino?new Date(d.data_termino).toLocaleDateString('pt-BR'):'—'}</td>
+    <td>${d.divergencia!=null?d.divergencia+'%':'—'}</td>
+    <td><span class="b ${sm[d.status]||'b-blue'}">${d.status||'—'}</span></td></tr>`).join('');
+}
+
+// ========== EXPEDIÇÃO ==========
+async function loadExpedicao(){
+  const {data} = await db.from('expedicao').select('*').order('created_at',{ascending:false});
+  if(!data) return;
+  document.getElementById('exp-total').textContent = data.length;
+  document.getElementById('exp-transito').textContent = data.filter(d=>d.status==='em_transito').length;
+  document.getElementById('exp-ok').textContent = data.filter(d=>d.status==='entregue').length;
+  document.getElementById('exp-aguard').textContent = data.filter(d=>d.status==='aguardando').length;
+  const sm = {entregue:'b-ok',em_transito:'b-blue',aguardando:'b-warn'};
+  const sl = {entregue:'Entregue',em_transito:'Em trânsito',aguardando:'Aguardando'};
+  document.getElementById('exp-tbody').innerHTML = data.map(d=>`
+    <tr><td style="color:#9ab8dc">${d.numero||'—'}</td><td>${d.tipo||'—'}</td><td>${d.destino||'—'}</td>
+    <td>${d.responsavel||'—'}</td><td>${d.data?new Date(d.data).toLocaleDateString('pt-BR'):'—'}</td>
+    <td><span class="b ${sm[d.status]||'b-blue'}">${sl[d.status]||d.status}</span></td>
+    <td><button class="btn btn-danger btn-sm" onclick="deletar('expedicao','${d.id}',loadExpedicao)">✕</button></td></tr>`).join('');
+}
+
+// ========== GESTÃO ==========
+async function loadGestao(){
+  const [colab, ff] = await Promise.all([
+    db.from('colaboradores').select('*').order('nome'),
+    db.from('ferias_folgas').select('*').order('inicio')
+  ]);
+  if(!colab.data) return;
+  document.getElementById('gest-total').textContent = colab.data.length;
+  const saldo = colab.data.reduce((s,d)=>s+(d.banco_horas||0),0);
+  document.getElementById('gest-horas').textContent = (saldo>=0?'+':'')+saldo+'h';
+  const agora = new Date();
+  const em30 = new Date(); em30.setDate(em30.getDate()+30);
+  const ferias = ff.data?.filter(f=>f.tipo==='ferias' && new Date(f.inicio)<=em30 && new Date(f.inicio)>=agora)||[];
+  const folgas = ff.data?.filter(f=>f.tipo==='folga')||[];
+  document.getElementById('gest-ferias').textContent = ferias.length;
+  document.getElementById('gest-folgas').textContent = folgas.length;
+
+  const colors = ['#70b8ff','#c4b5fd','#2dd4bf','#4ade80','#facc15','#f87171'];
+  document.getElementById('colab-lista').innerHTML = colab.data.map((d,i)=>`
+    <div class="prow">
+      <div style="display:flex;align-items:center;gap:9px">
+        <div class="avt" style="color:${colors[i%colors.length]}">${d.iniciais||d.nome.substring(0,2).toUpperCase()}</div>
+        <div><div style="font-size:12px;color:#9ab8dc;font-weight:500">${d.nome}</div><div style="font-size:11px;color:#3a6090">${d.setor}</div></div>
+      </div>
+      <span class="b ${(d.banco_horas||0)>=0?'b-ok':'b-crit'}">${(d.banco_horas||0)>=0?'+':''}${d.banco_horas||0}h</span>
+    </div>`).join('');
+
+  if(ff.data){
+    const sm = {aprovado:'b-ok',pendente:'b-warn',recusado:'b-crit'};
+    const tl = {ferias:'b-teal',folga:'b-purple'};
+    document.getElementById('ferias-tbody').innerHTML = ff.data.map(f=>`
+      <tr><td style="color:#9ab8dc">${f.colaborador_nome||'—'}</td>
+      <td><span class="b ${tl[f.tipo]||'b-blue'}">${f.tipo==='ferias'?'Férias':'Folga'}</span></td>
+      <td>${f.inicio?new Date(f.inicio).toLocaleDateString('pt-BR'):'—'}</td>
+      <td>${f.retorno?new Date(f.retorno).toLocaleDateString('pt-BR'):'—'}</td>
+      <td><span class="b ${sm[f.status]||'b-blue'}">${f.status||'—'}</span></td>
+      <td><button class="btn btn-danger btn-sm" onclick="deletar('ferias_folgas','${f.id}',loadGestao)">✕</button></td></tr>`).join('');
+  }
+}
+
+// ========== USUÁRIOS ==========
+async function loadUsuarios(){
+  const {data} = await db.from('usuarios').select('*').order('nome');
+  if(!data) return;
+  const pm = {admin:'b-crit',gestor:'b-warn',visualizador:'b-blue'};
+  document.getElementById('usr-tbody').innerHTML = data.map(u=>`
+    <tr><td style="color:#9ab8dc">${u.nome}</td><td>${u.email}</td>
+    <td><span class="b ${pm[u.perfil]||'b-blue'}">${u.perfil}</span></td>
+    <td>${u.setor||'Todos'}</td>
+    <td><span class="b ${u.ativo?'b-ok':'b-crit'}">${u.ativo?'Ativo':'Inativo'}</span></td>
+    <td><button class="btn btn-danger btn-sm" onclick="deletar('usuarios','${u.id}',loadUsuarios)">✕</button></td></tr>`).join('');
+}
+
+// ========== SALVAR ==========
+async function salvarColaborador(){
+  const nome = document.getElementById('colab-nome').value;
+  if(!nome){ showNotif('Preencha o nome','error'); return; }
+  const {error} = await db.from('colaboradores').insert({
+    nome, iniciais: document.getElementById('colab-iniciais').value,
+    setor: document.getElementById('colab-setor').value,
+    banco_horas: parseFloat(document.getElementById('colab-horas').value)||0
+  });
+  if(error){ showNotif('Erro ao salvar','error'); return; }
+  closeModal('modal-colab'); loadGestao(); loadGeral();
+  showNotif('Colaborador salvo com sucesso!','success');
+}
+
+async function salvarFerias(){
+  const nome = document.getElementById('ff-nome').value;
+  if(!nome){ showNotif('Preencha o nome','error'); return; }
+  const {error} = await db.from('ferias_folgas').insert({
+    colaborador_nome: nome,
+    tipo: document.getElementById('ff-tipo').value,
+    inicio: document.getElementById('ff-inicio').value,
+    retorno: document.getElementById('ff-retorno').value,
+    status: document.getElementById('ff-status').value
+  });
+  if(error){ showNotif('Erro ao salvar','error'); return; }
+  closeModal('modal-ferias'); loadGestao();
+  showNotif('Agendamento salvo!','success');
+}
+
+async function salvarRequisicao(){
+  const item = document.getElementById('req-item').value;
+  if(!item){ showNotif('Preencha o item','error'); return; }
+  const num = '#'+String(Math.floor(Math.random()*9000)+1000);
+  const {error} = await db.from('requisicoes').insert({
+    numero: num, solicitante: document.getElementById('req-sol').value,
+    item, quantidade: document.getElementById('req-qtd').value,
+    status: document.getElementById('req-status').value, data: new Date().toISOString().split('T')[0]
+  });
+  if(error){ showNotif('Erro ao salvar','error'); return; }
+  closeModal('modal-req'); loadRequisicoes(); loadGeral();
+  showNotif('Requisição criada!','success');
+}
+
+async function criarUsuario(){
+  const nome = document.getElementById('usr-nome').value;
+  const email = document.getElementById('usr-email').value;
+  const senha = document.getElementById('usr-senha').value;
+  if(!nome||!email||!senha){ showNotif('Preencha todos os campos','error'); return; }
+  const {error: authErr} = await db.auth.signUp({ email, password: senha });
+  if(authErr){ showNotif('Erro ao criar login: '+authErr.message,'error'); return; }
+  await db.from('usuarios').insert({
+    nome, email, perfil: document.getElementById('usr-perfil').value,
+    setor: document.getElementById('usr-setor').value||null
+  });
+  closeModal('modal-usuario'); loadUsuarios();
+  showNotif('Usuário criado! Um e-mail de confirmação foi enviado.','success');
+}
+
+// ========== DELETAR ==========
+async function deletar(tabela, id, callback){
+  if(!confirm('Deseja excluir este item?')) return;
+  await db.from(tabela).delete().eq('id', id);
+  if(callback) callback();
+  showNotif('Item removido','success');
+}
+
+// ========== IMPORT EXCEL ==========
+function importExcel(target){
+  importTarget = target;
+  document.getElementById('excel-input').click();
+}
+
+async function processExcel(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  showNotif('Lendo arquivo Excel...','');
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const wb = XLSX.read(e.target.result, {type:'binary'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws);
+    if(!rows.length){ showNotif('Arquivo vazio ou formato inválido','error'); return; }
+
+    let tabela = '';
+    let mapeados = [];
+
+    if(importTarget === 'gestao'){
+      tabela = 'colaboradores';
+      mapeados = rows.map(r=>({
+        nome: r['Nome']||r['nome']||r['NOME']||'',
+        iniciais: r['Iniciais']||r['iniciais']||'',
+        setor: r['Setor']||r['setor']||r['SETOR']||'',
+        banco_horas: parseFloat(r['Banco de Horas']||r['banco_horas']||r['Horas']||0)
+      })).filter(r=>r.nome);
+    } else if(importTarget === 'material'){
+      tabela = 'material_consumo';
+      mapeados = rows.map(r=>({
+        item: r['Item']||r['item']||r['Descrição']||'',
+        estoque_atual: parseFloat(r['Estoque']||r['estoque_atual']||0),
+        estoque_minimo: parseFloat(r['Mínimo']||r['minimo']||r['Estoque Mínimo']||0),
+        unidade: r['Unidade']||r['unidade']||'',
+        status: r['Status']||r['status']||'ok'
+      })).filter(r=>r.item);
+    } else if(importTarget === 'epi'){
+      tabela = 'epi';
+      mapeados = rows.map(r=>({
+        nome: r['EPI']||r['Nome']||r['nome']||'',
+        ca: r['CA']||r['ca']||'',
+        estoque: parseFloat(r['Estoque']||r['estoque']||0),
+        unidade: r['Unidade']||r['unidade']||'',
+        status: r['Status']||r['status']||'ok'
+      })).filter(r=>r.nome);
+    } else if(importTarget === 'uniforme'){
+      tabela = 'uniforme';
+      mapeados = rows.map(r=>({
+        peca: r['Peça']||r['Peca']||r['peca']||'',
+        tamanho: r['Tamanho']||r['tamanho']||'',
+        quantidade: parseFloat(r['Qtd']||r['quantidade']||r['Quantidade']||0),
+        minimo: parseFloat(r['Mínimo']||r['minimo']||0),
+        status: r['Status']||r['status']||'ok'
+      })).filter(r=>r.peca);
+    }
+
+    if(!tabela||!mapeados.length){ showNotif('Não foi possível identificar o formato. Verifique as colunas.','error'); return; }
+    const {error} = await db.from(tabela).insert(mapeados);
+    if(error){ showNotif('Erro ao importar: '+error.message,'error'); return; }
+    showNotif(`${mapeados.length} registros importados com sucesso!`,'success');
+    loadAll();
+  };
+  reader.readAsBinaryString(file);
+  event.target.value = '';
+}
+
+// ========== MODAL ==========
+function openModal(id){ document.getElementById(id).classList.add('on'); }
+function closeModal(id){ document.getElementById(id).classList.remove('on'); }
+document.querySelectorAll('.modal-bg').forEach(m=>{
+  m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('on'); });
+});
+
+// ========== NOTIF ==========
+function showNotif(msg, type){
+  const n = document.getElementById('notif');
+  n.textContent = msg; n.className = 'notif on '+(type||'');
+  setTimeout(()=>n.classList.remove('on'), 3500);
+}
+
+// ========== DATA ==========
+document.getElementById('cur-date').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+
+// Verificar sessão ativa
+db.auth.getSession().then(({data})=>{
+  if(data.session){
+    currentUser = data.session.user;
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('sistema').style.display='block';
+    document.getElementById('hdr-user').textContent = data.session.user.email.split('@')[0];
+    loadAll();
+  }
+});
+</script>
+</body>
+</html>
