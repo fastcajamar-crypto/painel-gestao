@@ -777,7 +777,7 @@ async function loadGestao(){
         <div class="avt" style="color:${colors[i%colors.length]}">${d.iniciais||d.nome.substring(0,2).toUpperCase()}</div>
         <div><div style="font-size:12px;color:#9ab8dc;font-weight:500">${d.nome}</div><div style="font-size:11px;color:#3a6090">${d.setor}</div></div>
       </div>
-      <span class="b ${(d.banco_horas||0)>=0?'b-ok':'b-crit'}">${(d.banco_horas||0)>=0?'+':''}${d.banco_horas||0}h</span>
+      <span class="b ${(d.banco_horas||0)>=0?'b-ok':'b-crit'}">${formatarHoras(d.banco_horas||0)}</span>
     </div>`).join('');
 
   if(ff.data){
@@ -872,6 +872,16 @@ async function deletar(tabela, id, callback){
   showNotif('Item removido','success');
 }
 
+// ========== FORMATAR HORAS ==========
+function formatarHoras(decimal){
+  const neg = decimal < 0;
+  const abs = Math.abs(decimal);
+  const h = Math.floor(abs);
+  const m = Math.round((abs - h) * 60);
+  const str = h + ':' + String(m).padStart(2,'0') + 'h';
+  return (neg ? '-' : '+') + str;
+}
+
 // ========== IMPORT EXCEL ==========
 function importExcel(target){
   importTarget = target;
@@ -894,12 +904,33 @@ async function processExcel(event){
 
     if(importTarget === 'gestao'){
       tabela = 'colaboradores';
-      mapeados = rows.map(r=>({
-        nome: r['Nome']||r['nome']||r['NOME']||'',
-        iniciais: r['Iniciais']||r['iniciais']||'',
-        setor: r['Setor']||r['setor']||r['SETOR']||'',
-        banco_horas: parseFloat(r['Banco de Horas']||r['banco_horas']||r['Horas']||0)
-      })).filter(r=>r.nome);
+      mapeados = rows.map(r=>{
+        // Limpa o nome removendo o texto repetido entre parênteses
+        let nomeRaw = r['Nome']||r['nome']||r['NOME']||'';
+        let nome = nomeRaw.replace(/\s*\(.*?\)\s*/g,'').trim();
+
+        // Lê SaldoEmpregador (coluna S) — pode ser string como "-05:15" ou "11:23"
+        let saldoRaw = r['SaldoEmpregador']||r['SaldoFinal']||r['Banco de Horas']||r['banco_horas']||'00:00';
+        let banco_horas = 0;
+        if(typeof saldoRaw === 'string' && saldoRaw.includes(':')){
+          // Converte "HH:MM" ou "-HH:MM" para número decimal de horas
+          let neg = saldoRaw.trim().startsWith('-');
+          let partes = saldoRaw.replace('-','').split(':');
+          let h = parseInt(partes[0])||0;
+          let m = parseInt(partes[1])||0;
+          banco_horas = (h + m/60) * (neg ? -1 : 1);
+          banco_horas = Math.round(banco_horas * 100) / 100;
+        } else {
+          banco_horas = parseFloat(saldoRaw)||0;
+        }
+
+        return {
+          nome,
+          iniciais: r['Iniciais']||r['iniciais']||nome.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase(),
+          setor: r['Departamento']||r['Setor']||r['setor']||r['SETOR']||'',
+          banco_horas
+        };
+      }).filter(r=>r.nome);
     } else if(importTarget === 'material'){
       tabela = 'material_consumo';
       mapeados = rows.map(r=>({
